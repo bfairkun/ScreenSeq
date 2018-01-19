@@ -36,6 +36,7 @@ python scripts/IsolateSingleGeneWithAnnotationsForAlignment.py --GenomeFasta MyG
   Make a barcode key (tab-delimited text file) that maps prospective filepaths (use a unique filepath name for each sample) to combinations of barcode sequences in the read. The tab delimited-text barcode key file should look something like this:
  
 Filepath(Absolute or Relative) | 500 series barcode | 700 series barcode | plate barcode | primer barcode
+--- | --- | --- | --- | ---
 FastqDemultiplex/MySample1.fastq | TGCAGCTA | TCGCATAA | CTGTAGCC | TCACGAACTTAA
 FastqDemultiplex/MySample2.fastq | TCGACGTC | TCGCATAA | CTGTAGCC | TCACGAACTTAA
 FastqDemultiplex/MySample3.fastq | TAAGGCGA | ATAGAGAG | NNCATCAAGT | TCACGAACTTAA
