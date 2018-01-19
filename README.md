@@ -69,7 +69,7 @@ Call the python script with the --help flag for more info
 
 ## Statistical test for differential splicing
 This walkthrough will use the method described in Larson et al. Briefly, that method models the WT (unspliced/spliced) ratio as a normal distribution where the mean and std parameters are determined by the mean and std of the (unspliced/spliced) ratio of samples with a similar total (unspliced + spliced) read depth. Strictly speaking, a discrete distribution such as a Poisson or negative binomial may be more appropriate to model this count-based data, but we found emperically that a normal distribution to model (unspliced/spliced) ratio is a simpler model that is still reasonable provided that the total number of unspliced + spliced read for a particular sample is large (>1000). The figure below is a useful way to visualize this statistical test for differential splicing to identify screen hits (points labelled on the plot).
-![alt text](./Picture1.png "MA-like plot")
+![alt text](./images/MyPlot.png "MA-like plot")
 
 In this walkthrough we will make the above figure from sample data taken from Larson et al. That sample data is included in this repository as 'SampleData_ScreenSeqResults.txt', but you could use your own data obtained from the **Aligning and counting reads** section. The 'SampleData_ScreenSeqResults.txt' file has very different column names than the default output of the 'AlignerLoop.sh' script, but the steps you take in this walkthrough are generally the same as if you were using the output of the 'AlignerLoop.sh' script.
 
