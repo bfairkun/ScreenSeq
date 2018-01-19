@@ -41,14 +41,8 @@ FastqDemultiplex/MySample1.fastq | TGCAGCTA | TCGCATAA | CTGTAGCC | TCACGAACTTAA
 FastqDemultiplex/MySample2.fastq | TCGACGTC | TCGCATAA | CTGTAGCC | TCACGAACTTAA
 FastqDemultiplex/MySample3.fastq | TAAGGCGA | ATAGAGAG | NNCATCAAGT | TCACGAACTTAA
 FastqDemultiplex/MySample4.fastq | CGTACTAG | ATAGAGAG | NNCATCAAGT | TCACGAACTTAA
-...
+...MoreRows... | ... | ... | ... | ...
 FastqDemultiplex/MySampleN.fastq | CGTACTAG | ATAGAGAG | NNNCATCAAGT | TCACGAACTTAA
-
-| Tables        | Are           | Cool  |
-| ------------- |:-------------:| -----:|
-| col 3 is      | right-aligned | $1600 |
-| col 2 is      | centered      |   $12 |
-| zebra stripes | are neat      |    $1 |
 
 Demultiplex the fastq file(s) using the python script CustomBarcodeDemultiplexer.py. If the data is already demultiplexed into separate fastq files by Illumina indices but not plate-barcodes, then I recommend first concatenating (an decompressing if necessary) all of those files, and using that as input for the CustomBarcodeDemultiplexer.py script. This can be easily accomplished with a wildcard glob-pattern and fed to the script as STDIN like the example below:
 
