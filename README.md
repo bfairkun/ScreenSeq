@@ -19,7 +19,7 @@ The following softwares should be available from PATH environment
 ### Getting started and making a genome file
 Clone this repository with
 ```bash
-clone https://github.com/bfairkun/ScreenSeq.git
+git clone https://github.com/bfairkun/ScreenSeq.git
 ```
 Download the full reference genome. [Here](http://support.illumina.com/sequencing/sequencing_software/igenome.html)
  is one source. Since this is amplicon sequencing, this walk-through suggests you make new reference genome files (fasta file and a gtf file) which contain only the target genes of interest as their own contigs, rather than aligning to the entire genome. Use the accompanying python script to help you make new reference genome files containing only select genes as the contigs.
