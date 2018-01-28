@@ -87,7 +87,7 @@ awk -F '\t' -v OFS='\t' 'NR==1 {print "JoiningField", $0} NR>1 && $1~/^2/ {split
 join -t $'\t' --header FilteredRep1.txt FilteredRep2.txt > BioRepColumnsCombinedInSameRow.txt
 ```
 
-Now we can run the Z-testGivenReadCountUsingSplineInterpolation.py script. In this example will use parameters to sum the columns that pertain to (spliced reads bio-replicate 1) and (spliced reads bio-replicate2) and do a similar thing for unspliced reads. We will use the [Q-value](https://www.ncbi.nlm.nih.gov/pubmed/12883005) method for FDR correction. Call script with --help flag for more details on the possible arguments. The script should output a text-file containing P-values as well as the above figure.
+Now we can run the Z-testGivenReadCountUsingSplineInterpolation.py script. In this example will use parameters to sum the columns that pertain to (spliced reads bio-replicate 1) and (spliced reads bio-replicate2) and do a similar thing for unspliced reads. We will use the [Q-value](https://www.ncbi.nlm.nih.gov/pubmed/12883005) method for FDR correction. One way to check that this statistical model is reasonable, is to make a QQ-plot. We will make one here. Call script with --help flag for more details on the possible arguments. The script should output a text-file containing P-values as well as the above figure.
 
 ```bash
 python ./scripts/ZtestByReadDensitySplineFunction.py --InputFile BioRepColumnsCombinedInSameRow.txt --NumeratorColumnName fet5_UnsplicedReads fet5_UnsplicedReads_1 --DenominatorColumnName fet5_SplicedReads fet5_SplicedReads_1 --MultipleHypothesisCorrection Qvalue --IdentifierColumnName Common_Name --TestType RightSidedTest --OutputFile MyOutput.txt --PlotMA MyPlot.png --ShowSplineFitConfidenceInterval --LabelSignificantPointsInPlot
