@@ -101,6 +101,7 @@ def main(InputFile,
     MultipleHypothesisCorrection = 'BenjaminiHochberg',
     FDR = 0.05,
     PlotMA = None,
+    PlotQQ = None,
     LabelSignificantPointsInPlot = False,
     ShowSplineFitConfidenceInterval = False,
     CopyInputFileContentsToOutput = False,
@@ -216,6 +217,17 @@ The required input is a tab-delimited text file where each row corresponds to a 
             for x, y, name in SignificantPoints:
                 plt.text(x,y,name,size=6)
         plt.savefig(PlotMA)
+    
+    if PlotQQ:
+        fig, ax = plt.subplots(1, 1)
+        (osm, osr), (slope, intercept, r) = scipy.stats.probplot(Zscores.compressed(),plot=ax,dist=scipy.stats.norm,rvalue=True, fit=True)
+        print r**2
+        x = np.linspace(*ax.get_xlim())
+        line, = ax.plot(x, x)
+        line.set_label('y=x line')
+        ax.legend()
+        plt.savefig(PlotQQ)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(usage = main.__doc__)
@@ -226,11 +238,12 @@ if __name__ == "__main__":
     parser.add_argument("--MeanSplineFunctionOrder", metavar = "[integer]", help="OPTIONAL. Polynomial order of the spline fit to the mean of bins used to estimate the  mean under the null hypothesis at a given read depth. Default = 2", type=int, default=2)
     parser.add_argument("--StdSplineFunctionOrder", metavar = "[integer]", help="OPTIONAL. Polynomial order of the spline fit to the standard deviation of bins used to estimate the standard deviation under the null hypothesis at a given read depth. Default = 1", type=int, default=1)
     parser.add_argument("--NumberBins", metavar = "[integer]", help="OPTIONAL. Number of ReadCount bins to divide the dataset into to create points for spline fitting. Samples below the MinimumReadThreshold are not considered part of the dataset. Default = 10", type=int, default=10)
-    parser.add_argument("--BinSpacing", metavar = "[integer]", help="OPTIONAL. Minimum number of reads in a sample to consider for spline fitting and statistical testing, Default = EvenNumberSamplesPerBin", choices=['EvenNumberSamplesPerBin','EvenlySpacedBins'], default='EvenNumberSamplesPerBin')
+    parser.add_argument("--BinSpacing", help="OPTIONAL. How to determine bin spacing along ReadCount axis, Default = EvenNumberSamplesPerBin", choices=['EvenNumberSamplesPerBin','EvenlySpacedBins'], default='EvenNumberSamplesPerBin')
     parser.add_argument("--TestType", help="OPTIONAL. TwoSidedTest: And increase or decrease in log(numerator/denominator) can be called significant. RightSidedTest: Only an increase in log(numerator/denominator) can be called significant). LeftSidedTest: Only an decrease in log(numerator/denominator) can be called significant). Default = TwoSidedTest", choices=['TwoSidedTest','RightSidedTest', 'LeftSidedTest'], default='TwoSidedTest')
     parser.add_argument("--MultipleHypothesisCorrection", help="OPTIONAL. BenjaminiHochberg: Implemented as on the wiki-page. Qvalue: Implemented using the module 'qvalue' which must be installed. Default = BenjaminiHochberg", choices=['BenjaminiHochberg','Qvalue'], default='BenjaminiHochberg')
     parser.add_argument("--FDR", metavar = "[float]", help="OPTIONAL. False discovery rate. Default = 0.05", type=float, default=0.05)
     parser.add_argument("--PlotMA", metavar = "[filepath.pdf]", help="OPTIONAL. If a output filepath is supplied, create a MA-plot of the data and save it as the provided filepath. The type of image depends on the file extension (.svg, .png, .pdf) given. Default = None (No plot created)", default=None)
+    parser.add_argument("--PlotQQ", metavar = "[filepath.pdf]", help="OPTIONAL. If a output filepath is supplied, create a normal QQ-plot of the Z-scores and save it as the provided filepath. The type of image depends on the file extension (.svg, .png, .pdf) given. Default = None (No plot created)", default=None)
     parser.add_argument("--PlotParameter", metavar = "[key]=[value]", help="OPTIONAL. Plotting parameters to pass to MA-plotting function. The same parameters that can be used with the matplotlib.pyplot.scatter() function can be used. Each key=value must be preceded by --PlotParameterDictionary. For example, if you wanted to the plot points to be blue and transparent, you would include --PlotParameter c=blue --PlotParameter alpha=0.5", action='append', type=lambda kv: kv.split("="), dest='PlotParameterList', default = None)
     parser.add_argument("--CopyInputFileContentsToOutput", help="OPTIONAL. Copy the file contents of the input file to the output file, while appending the same columns that would otherwise be in the output file.", action="store_true")
     parser.add_argument("--LabelSignificantPointsInPlot", help="OPTIONAL. Label samples which are below the acceptable FDR with a sample name (samples names are provided by the value of IdentifierColumn of the InputFile specified by --IdentifierColumnName)", action="store_true")
