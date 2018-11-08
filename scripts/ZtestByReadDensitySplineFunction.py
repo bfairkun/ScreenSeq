@@ -38,12 +38,10 @@ def Log10Ticks(MyMin, MyMax):
     mylist = range(int(math.floor(MyMin)), int(math.ceil(MyMax)))
     listout =[]
     ticklabelsout=[]
-    print mylist
     for i in mylist:
         # listout += range(10**i, 10**(i+1), 10**i)
         listout += np.linspace(10**i, 10**(i+1), num=9, endpoint=False).tolist()
     listout += np.around([10**math.ceil(MyMax)]).tolist()
-    print listout
     for i in listout:
         if np.log10(i).is_integer():
             if i >= 1: ticklabelsout.append(str(int(i)))
@@ -99,8 +97,10 @@ def main(InputFile,
     BinSpacing = 'EvenNumberSamplesPerBin',
     TestType = 'TwoSidedTest',
     MultipleHypothesisCorrection = 'BenjaminiHochberg',
+    NoSplineFitting = False,
     FDR = 0.05,
     PlotMA = None,
+    PlotMAPercent = None,
     PlotQQ = None,
     LabelSignificantPointsInPlot = False,
     ShowSplineFitConfidenceInterval = False,
@@ -119,7 +119,8 @@ The required input is a tab-delimited text file where each row corresponds to a 
     """
     warnings.simplefilter(action = "ignore", category = FutureWarning)
     np.seterr(divide='ignore')
-    if InputFile == 'stdin': InputFile = sys.stdin
+    if InputFile == 'stdin':
+        InputFile = sys.stdin
     TableIn = np.genfromtxt(InputFile, dtype=None, delimiter='\t', missing_values="", names=True, usemask=True)
     if not IdentifierColumnName: IdentifierColumnName = TableIn.dtype.names[0]
     if not NumeratorColumnName: NumeratorColumnName.append(TableIn.dtype.names[1])
@@ -142,8 +143,6 @@ The required input is a tab-delimited text file where each row corresponds to a 
     xOverReadThreshold = np.ma.masked_where((x<np.log10(MinimumReadThreshold)), x)
 #     yOverReadThreshold = np.ma.masked_where((x<np.log10(MinimumReadThreshold))&(NumeratorArray<10), y)
 #     xOverReadThreshold = np.ma.masked_where((x<np.log10(MinimumReadThreshold))&(NumeratorArray<10), x)
-
-
     
     if BinSpacing == 'EvenNumberSamplesPerBin':
         bin_edges = scipy.stats.mstats.mquantiles(xOverReadThreshold.compressed(), prob=np.linspace(0,1,num=NumberBins+1, endpoint=True))
@@ -156,7 +155,10 @@ The required input is a tab-delimited text file where each row corresponds to a 
     bin_centers[-1] = bin_edges[-1]
     std_as_function_of_counts = UnivariateSpline(bin_centers, bin_std, k=StdSplineFunctionOrder)
     mean_as_function_of_counts = UnivariateSpline(bin_centers, bin_mean, k=MeanSplineFunctionOrder)
+    yTransformedToPercent = 100*(2**(y-mean_as_function_of_counts(x)+np.ma.median(yOverReadThreshold)))/(1+2**(y-mean_as_function_of_counts(x)+np.ma.median(yOverReadThreshold)))
     Zscores = (yOverReadThreshold-mean_as_function_of_counts(xOverReadThreshold))/std_as_function_of_counts(xOverReadThreshold)
+    if NoSplineFitting:
+        Zscores = yOverReadThreshold - np.ma.mean(yOverReadThreshold)/yOverReadThreshold.std()
     if TestType == 'TwoSidedTest':
         pvalues = np.ma.masked_array(scipy.stats.norm.sf(abs(Zscores)), mask=xOverReadThreshold.mask) * 2
     elif TestType == 'RightSidedTest':
@@ -177,17 +179,18 @@ The required input is a tab-delimited text file where each row corresponds to a 
             if i == 0:
                 if CopyInputFileContentsToOutput:
                     fhOut.write(line.strip('\n') + '\t')
-                fhOut.write('Sample\tReadCount\tRatio\tZscore\tPvalue\tCorrectedPvalue')
+                fhOut.write('Sample\tReadCount\tRatio\tZscore\tPvalue\tCorrectedPvalue\tRatioAsNormalizedPercent')
             else:
                 indexPos = i-1
                 fhOut.write('\n')
                 if CopyInputFileContentsToOutput:
                     fhOut.write(line.strip('\n') + '\t')
-                fhOut.write('{}\t{}\t{}\t{}\t{}\t{}'.format(TableIn[IdentifierColumnName][indexPos],x[indexPos],y[indexPos],Zscores[indexPos],pvalues[indexPos],CorrectedP[indexPos]))
+                fhOut.write('{}\t{}\t{}\t{}\t{}\t{}\t{}'.format(TableIn[IdentifierColumnName][indexPos],x[indexPos],y[indexPos],Zscores[indexPos],pvalues[indexPos],CorrectedP[indexPos],yTransformedToPercent[indexPos]))
         fhIn.close()
         fhOut.close()
 
     if PlotMA:
+        print 'plotmay', y
         if Verbose: print('Generating MA-plot...')
         fig, ax = plt.subplots(1, 1)
         mpl.rcParams['mathtext.fontset'] = 'custom'
@@ -217,11 +220,45 @@ The required input is a tab-delimited text file where each row corresponds to a 
             for x, y, name in SignificantPoints:
                 plt.text(x,y,name,size=6)
         plt.savefig(PlotMA)
-    
+
+    if PlotMAPercent:
+        if Verbose: print('Generating MA-plot...')
+        fig, ax = plt.subplots(1, 1)
+        mpl.rcParams['mathtext.fontset'] = 'custom'
+        mpl.rcParams['mathtext.rm'] = 'Bitstream Vera Sans'
+        mpl.rcParams['mathtext.it'] = 'Bitstream Vera Sans:italic'
+        mpl.rcParams['mathtext.bf'] = 'Bitstream Vera Sans:bold'
+        print 'hello', y
+#         newy = np.ma.log2(100*(2**(y-mean_as_function_of_counts(x)+np.ma.median(yOverReadThreshold)))/(1+2**(y-mean_as_function_of_counts(x)+np.ma.median(yOverReadThreshold))))
+        newy = 100*(2**(y-mean_as_function_of_counts(x)+np.ma.median(yOverReadThreshold)))/(1+2**(y-mean_as_function_of_counts(x)+np.ma.median(yOverReadThreshold)))
+
+        print len(newy), len(newy.compressed())
+        fig, ax = plt.subplots(1,1)
+        ax.scatter(x, newy, c='gray', alpha=0.1, edgecolors='none', s=12)
+        plt.xticks(*Log10Ticks(*ax.get_xlim()))
+        plt.xlim(3,5.5)
+        plt.ylim(0,16)
+#         yticks, yticklabels = Log10Ticks(*[i/(np.log(10)/np.log(2)) for i in ax.get_ylim()])
+#         yticks = np.array(yticks) * (np.log(10)/np.log(2))
+#         plt.yticks(yticks, yticklabels)
+        ax.tick_params(direction='in', top='on', right='on')
+        plt.xlabel('Read Count')
+        plt.ylabel("Percent Unspliced")
+#         plt.ylabel(r'$\frac{%s}{%s}$' %('+'.join(NumeratorColumnName).replace('_', ''), '+'.join(DenominatorColumnName).replace('_', '')))
+        if LabelSignificantPointsInPlot:
+            SignificantPoints = []
+            for i, CorrectedPvalue in enumerate(np.nditer(CorrectedP)):
+                if (CorrectedPvalue < FDR and x[i]>=np.log10(MinimumReadThreshold)) or TableIn[IdentifierColumnName][i]=='102B12':
+                    SignificantPoints.append((x[i],newy[i],TableIn[IdentifierColumnName][i]))
+            for myx, myy, name in SignificantPoints:
+                ax.scatter(myx,myy,c='white', edgecolor='gray', linewidths=1.5, s=12)
+#                 plt.text(myx,myy,name,size=1)
+        plt.savefig(PlotMAPercent)
+
     if PlotQQ:
         fig, ax = plt.subplots(1, 1)
         (osm, osr), (slope, intercept, r) = scipy.stats.probplot(Zscores.compressed(),plot=ax,dist=scipy.stats.norm,rvalue=True, fit=True)
-        print r**2
+#         print r**2
         x = np.linspace(*ax.get_xlim())
         line, = ax.plot(x, x)
         line.set_label('y=x line')
@@ -241,8 +278,10 @@ if __name__ == "__main__":
     parser.add_argument("--BinSpacing", help="OPTIONAL. How to determine bin spacing along ReadCount axis, Default = EvenNumberSamplesPerBin", choices=['EvenNumberSamplesPerBin','EvenlySpacedBins'], default='EvenNumberSamplesPerBin')
     parser.add_argument("--TestType", help="OPTIONAL. TwoSidedTest: And increase or decrease in log(numerator/denominator) can be called significant. RightSidedTest: Only an increase in log(numerator/denominator) can be called significant). LeftSidedTest: Only an decrease in log(numerator/denominator) can be called significant). Default = TwoSidedTest", choices=['TwoSidedTest','RightSidedTest', 'LeftSidedTest'], default='TwoSidedTest')
     parser.add_argument("--MultipleHypothesisCorrection", help="OPTIONAL. BenjaminiHochberg: Implemented as on the wiki-page. Qvalue: Implemented using the module 'qvalue' which must be installed. Default = BenjaminiHochberg", choices=['BenjaminiHochberg','Qvalue'], default='BenjaminiHochberg')
+    parser.add_argument("--NoSplineFitting", help="OPTIONAL. No spline fitting, just get Z statistic from log(numerator/denominator)", action="store_true")
     parser.add_argument("--FDR", metavar = "[float]", help="OPTIONAL. False discovery rate. Default = 0.05", type=float, default=0.05)
     parser.add_argument("--PlotMA", metavar = "[filepath.pdf]", help="OPTIONAL. If a output filepath is supplied, create a MA-plot of the data and save it as the provided filepath. The type of image depends on the file extension (.svg, .png, .pdf) given. Default = None (No plot created)", default=None)
+    parser.add_argument("--PlotMAPercent", metavar = "[filepath.pdf]", help="OPTIONAL. If a output filepath is supplied, create a MA-plot of the data and save it as the provided filepath. The type of image depends on the file extension (.svg, .png, .pdf) given. Default = None (No plot created)", default=None)
     parser.add_argument("--PlotQQ", metavar = "[filepath.pdf]", help="OPTIONAL. If a output filepath is supplied, create a normal QQ-plot of the Z-scores and save it as the provided filepath. The type of image depends on the file extension (.svg, .png, .pdf) given. Default = None (No plot created)", default=None)
     parser.add_argument("--PlotParameter", metavar = "[key]=[value]", help="OPTIONAL. Plotting parameters to pass to MA-plotting function. The same parameters that can be used with the matplotlib.pyplot.scatter() function can be used. Each key=value must be preceded by --PlotParameterDictionary. For example, if you wanted to the plot points to be blue and transparent, you would include --PlotParameter c=blue --PlotParameter alpha=0.5", action='append', type=lambda kv: kv.split("="), dest='PlotParameterList', default = None)
     parser.add_argument("--CopyInputFileContentsToOutput", help="OPTIONAL. Copy the file contents of the input file to the output file, while appending the same columns that would otherwise be in the output file.", action="store_true")
